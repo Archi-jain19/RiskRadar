@@ -1,0 +1,6 @@
+Student_ID,name,Age,Gender,Department,Semester,Attendance_Rate,GPA,Semester_GPA,CGPA,Internet_Access,Parental_Education,Family_Income,Part_Time_Job,Scholarship,Assignment_Delay_Days,assignment_completion,Study_Hours_per_Day,lms_activity,class_participation,Stress_Index,distance_from_college,Travel_Time_Minutes,financial_background
+"PRS001","Alex Chen",19,"Male","CS","Year 2",45,3.2,3.0,3.5,"No","High School",18000,"Yes","No",12,30,1.5,20,25,9,30,75,1
+"PRS002","Sarah Jenkins",21,"Female","Engineering","Year 4",98,9.5,9.6,9.4,"Yes","Master",85000,"No","Yes",0,98,4.5,90,95,3,5,15,4
+"PRS003","Marcus Johnson",20,"Male","Business","Year 3",72,6.8,6.5,7.0,"Yes","Bachelor",42000,"Yes","No",4,65,2.5,55,60,6,15,40,2
+"PRS004","Elena Rodriguez",18,"Female","Science","Year 1",55,4.5,4.5,4.5,"Yes","High School",25000,"No","No",8,45,2.0,35,40,8,20,55,2
+"PRS005","David Kim",22,"Male","CS","Year 4",88,8.2,8.0,8.3,"Yes","PhD",120000,"No","No",1,85,3.5,75,80,4,10,25,5

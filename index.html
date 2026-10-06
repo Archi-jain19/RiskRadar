@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Faculty Copilot — Student Dropout Risk Analyzer</title>
+    <meta name="description"
+        content="AI-powered chatbot for faculty to assess student dropout risk using machine learning.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── Reset & Variables ──────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-glass: rgba(255, 255, 255, 0.04);
+            --bg-glass-hover: rgba(255, 255, 255, 0.08);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: rgba(59, 130, 246, 0.3);
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.2);
+            --accent-green-glow: rgba(16, 185, 129, 0.2);
+            --accent-amber-glow: rgba(245, 158, 11, 0.2);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-xs: 6px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.12), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139, 92, 246, 0.08), transparent),
+                var(--bg-primary);
+        }
+
+        /* ── Chatbot Container ─────────────────────────────────── */
+        #app {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 860px;
+            height: 96vh;
+            background: var(--bg-card);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow), 0 0 80px rgba(59, 130, 246, 0.06);
+            overflow: hidden;
+        }
+
+        /* ── Header ────────────────────────────────────────────── */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.06));
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .header-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 16px var(--accent-blue-glow);
+        }
+
+        .header-text h1 {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .header-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            margin-left: auto;
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* ── Messages Area ─────────────────────────────────────── */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: var(--border-glass);
+            border-radius: 4px;
+        }
+
+        /* ── Message Bubbles ────────────────────────────────────── */
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 92%;
+            animation: msg-in 0.35s ease-out;
+        }
+
+        @keyframes msg-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+        }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .message.user .msg-avatar {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .message.bot .msg-avatar {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+        }
+
+        .msg-content {
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .message.user .msg-content {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .msg-content {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-bottom-left-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        /* ── Structured Response Cards ─────────────────────────── */
+        .card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            padding: 18px;
+            margin-top: 8px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: var(--bg-glass-hover);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .card-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .card-header .usn-tag {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* Risk Badge */
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .risk-badge.high {
+            background: var(--accent-red-glow);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .risk-badge.medium {
+            background: var(--accent-amber-glow);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .risk-badge.low {
+            background: var(--accent-green-glow);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Score Ring */
+        .score-section {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin: 14px 0;
+        }
+
+        .score-ring {
+            position: relative;
+            width: 64px;
+            height: 64px;
+        }
+
+        .score-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-ring .bg {
+            stroke: rgba(255, 255, 255, 0.06);
+        }
+
+        .score-ring .fill {
+            transition: stroke-dashoffset 1s ease-out;
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .score-label strong {
+            display: block;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xs);
+            padding: 10px 12px;
+        }
+
+        .stat-item .label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+
+        .stat-item .value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Factor list */
+        .factor-list {
+            list-style: none;
+        }
+
+        .factor-list li {
+            padding: 10px 14px;
+            border-left: 3px solid var(--accent-red);
+            margin-bottom: 8px;
+            background: rgba(239, 68, 68, 0.04);
+            border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+            font-size: 13px;
+        }
+
+        .factor-list li .factor-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .factor-list li .factor-detail {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        /* Recommendation list */
+        .rec-list {
+            list-style: none;
+        }
+
+        .rec-list li {
+            padding: 8px 14px;
+            border-left: 3px solid var(--accent-blue);
+            margin-bottom: 6px;
+            background: rgba(59, 130, 246, 0.04);
+            border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Positive indicators */
+        .positive-list {
+            list-style: none;
+        }
+
+        .positive-list li {
+            padding: 8px 14px;
+            border-left: 3px solid var(--accent-green);
+            margin-bottom: 6px;
+            background: rgba(16, 185, 129, 0.04);
+            border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+            font-size: 13px;
+        }
+
+        .positive-list li .ind-name {
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        .positive-list li .ind-value {
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+
+        /* Encouragement */
+        .encouragement {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(59, 130, 246, 0.06));
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: var(--radius-xs);
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        /* High risk table */
+        .risk-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .risk-table th {
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .risk-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        .risk-table tr:hover td {
+            background: var(--bg-glass);
+        }
+
+        /* Section titles inside cards */
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 14px 0 8px;
+            font-weight: 600;
+        }
+
+        /* Explanation card */
+        .explain-factor {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .explain-factor:last-child {
+            border-bottom: none;
+        }
+
+        .explain-weight {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+
+        .explain-weight.high {
+            background: var(--accent-red-glow);
+            color: var(--accent-red);
+        }
+
+        .explain-weight.medium-high {
+            background: var(--accent-amber-glow);
+            color: var(--accent-amber);
+        }
+
+        .explain-weight.medium {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .explain-factor .ef-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .explain-factor .ef-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Command list in welcome */
+        .cmd-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .cmd-list li {
+            padding: 10px 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xs);
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .cmd-list li:hover {
+            background: var(--bg-glass-hover);
+            border-color: var(--accent-blue);
+        }
+
+        .cmd-list li code {
+            font-family: 'Fira Code', monospace;
+            color: var(--accent-blue);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .cmd-list li .cmd-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 14px 18px;
+        }
+
+        .typing-indicator span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+
+            30% {
+                opacity: 1;
+                transform: translateY(-4px);
+            }
+        }
+
+        /* ── Quick Actions ─────────────────────────────────────── */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            padding: 10px 24px;
+            overflow-x: auto;
+        }
+
+        .quick-actions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .quick-btn {
+            flex-shrink: 0;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-family: var(--font);
+            font-weight: 500;
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .quick-btn:hover {
+            background: var(--accent-blue);
+            color: #fff;
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 16px var(--accent-blue-glow);
+        }
+
+        /* ── Input Area ────────────────────────────────────────── */
+        .input-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 24px 20px;
+            border-top: 1px solid var(--border-glass);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            font-size: 14px;
+            font-family: var(--font);
+            border-radius: 12px;
+            border: 1px solid var(--border-glass);
+            background: var(--bg-glass);
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        #chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        #chat-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px var(--accent-blue-glow);
+        }
+
+        #send-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: 0 4px 16px var(--accent-blue-glow);
+        }
+
+        #send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 24px var(--accent-blue-glow);
+        }
+
+        #send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ── Responsive ────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            #app {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .messages {
+                padding: 14px;
+            }
+
+            .input-area {
+                padding: 12px 14px 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .report-meta {
+                flex-direction: column;
+            }
+        }
+
+        /* ── Summary Grid (class summary) ─────────────────────── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 14px 0;
+        }
+
+        .summary-stat {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xs);
+            padding: 14px 16px;
+            text-align: center;
+        }
+
+        .summary-stat .ss-value {
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .summary-stat .ss-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* ── Severity Badge ────────────────────────────────────── */
+        .severity-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        .severity-badge.critical {
+            background: var(--accent-red-glow);
+            color: var(--accent-red);
+        }
+
+        .severity-badge.warning {
+            background: var(--accent-amber-glow);
+            color: var(--accent-amber);
+        }
+
+        /* ── Signal List (warnings) ────────────────────────────── */
+        .signal-student {
+            padding: 12px 14px;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xs);
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .signal-student-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .signal-student-header .ss-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .signal-list {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .signal-list li {
+            font-size: 12px;
+            padding: 4px 10px;
+            background: rgba(245, 158, 11, 0.06);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            border-radius: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ── Trend Bars (progress) ─────────────────────────────── */
+        .trend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .trend-label {
+            width: 90px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .trend-bars {
+            flex: 1;
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 32px;
+        }
+
+        .trend-bar {
+            flex: 1;
+            border-radius: 3px 3px 0 0;
+            min-height: 4px;
+            transition: height 0.6s ease-out;
+            position: relative;
+        }
+
+        .trend-bar::after {
+            content: attr(data-val);
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .trend-bar:hover::after {
+            opacity: 1;
+        }
+
+        .trend-arrow {
+            font-size: 12px;
+            font-weight: 700;
+            width: 24px;
+            text-align: center;
+        }
+
+        .trend-arrow.up {
+            color: var(--accent-green);
+        }
+
+        .trend-arrow.down {
+            color: var(--accent-red);
+        }
+
+        .trend-months {
+            display: flex;
+            gap: 3px;
+            margin-left: 100px;
+            margin-bottom: 12px;
+        }
+
+        .trend-months span {
+            flex: 1;
+            text-align: center;
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        /* ── Report Meta ───────────────────────────────────────── */
+        .report-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .report-meta-item {
+            flex: 1;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xs);
+        }
+
+        .report-meta-item .rm-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .report-meta-item .rm-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">🎓</div>
+            <div class="header-text">
+                <h1>AI Faculty Copilot</h1>
+                <p>Student Dropout Risk Analyzer</p>
+            </div>
+            <div class="status-dot" title="Online"></div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages" id="messages"></div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="sendQuick('Check student USN: 22CS045')">🔍 Check USN</button>
+            <button class="quick-btn" onclick="sendQuick('Show class risk summary')">📊 Class Summary</button>
+            <button class="quick-btn" onclick="sendQuick('Show top 5 students at risk')">🏆 Top 5 At Risk</button>
+            <button class="quick-btn" onclick="sendQuick('Show warning signals')">⚡ Warning Signals</button>
+            <button class="quick-btn" onclick="sendQuick('Show high risk students')">⚠️ High Risk List</button>
+            <button class="quick-btn" onclick="sendQuick('Explain risk factors')">📋 Explain Factors</button>
+            <button class="quick-btn" onclick="sendQuick('help')">❓ Help</button>
+        </div>
+
+        <!-- Input -->
+        <div class="input-area">
+            <input type="text" id="chat-input" placeholder="Type a USN or command… e.g. Check student USN: 22CS045"
+                autocomplete="off">
+            <button id="send-btn" title="Send">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const messagesEl = document.getElementById('messages');
+        const inputEl = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // ── Boot welcome ──────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            addBotMessage(renderWelcome());
+        });
+
+        // ── Send ──────────────────────────────────────────────
+        sendBtn.addEventListener('click', send);
+        inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+        function sendQuick(text) {
+            inputEl.value = text;
+            send();
+        }
+
+        async function send() {
+            const text = inputEl.value.trim();
+            if (!text) return;
+            inputEl.value = '';
+
+            addUserMessage(text);
+            const typingEl = addTypingIndicator();
+
+            try {
+                const res = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text }),
+                });
+                const data = await res.json();
+                typingEl.remove();
+                addBotMessage(renderResponse(data.response));
+            } catch (err) {
+                typingEl.remove();
+                addBotMessage(`<div style="color:var(--accent-red)">⚠️ Connection error. Make sure the backend is running on ${API_BASE}</div>`);
+            }
+        }
+
+        // ── Message rendering ─────────────────────────────────
+        function addUserMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message user';
+            div.innerHTML = `<div class="msg-avatar">👤</div><div class="msg-content">${escapeHtml(text)}</div>`;
+            messagesEl.appendChild(div);
+            scrollToBottom();
+        }
+
+        function addBotMessage(html) {
+            const div = document.createElement('div');
+            div.className = 'message bot';
+            div.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-content">${html}</div>`;
+            messagesEl.appendChild(div);
+            scrollToBottom();
+            // Animate score rings
+            setTimeout(() => animateScoreRings(div), 100);
+        }
+
+        function addTypingIndicator() {
+            const div = document.createElement('div');
+            div.className = 'message bot';
+            div.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+            messagesEl.appendChild(div);
+            scrollToBottom();
+            return div;
+        }
+
+        function scrollToBottom() {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        // ── Response router ───────────────────────────────────
+        function renderResponse(r) {
+            switch (r.type) {
+                case 'risk_report': return renderRiskReport(r);
+                case 'healthy_report': return renderHealthyReport(r);
+                case 'high_risk_list': return renderHighRiskList(r);
+                case 'explanation': return renderExplanation(r);
+                case 'welcome': return renderWelcome(r);
+                case 'why_risk': return renderWhyRisk(r);
+                case 'class_summary': return renderClassSummary(r);
+                case 'top_risk': return renderTopRisk(r);
+                case 'warning_signals': return renderWarningSignals(r);
+                case 'progress_trend': return renderProgressTrend(r);
+                case 'student_report': return renderStudentReport(r);
+                case 'error': return `<div style="color:var(--accent-amber)">⚠️ ${r.message}</div>`;
+                default: return `<pre>${JSON.stringify(r, null, 2)}</pre>`;
+            }
+        }
+
+        // ── Risk Report ───────────────────────────────────────
+        function renderRiskReport(r) {
+            const pct = Math.round(r.dropout_probability * 100);
+            const riskClass = r.risk_level.toLowerCase();
+            const riskColors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+            const color = riskColors[riskClass] || '#3b82f6';
+
+            let factorsHtml = '';
+            if (r.key_factors && r.key_factors.length) {
+                factorsHtml = `<div class="section-title">⚠️ Key Risk Factors</div><ul class="factor-list">` +
+                    r.key_factors.map(f => `<li><span class="factor-name">${f.factor}: ${f.value}</span><div class="factor-detail">${f.concern}</div></li>`).join('') +
+                    `</ul>`;
+            }
+
+            let recsHtml = '';
+            if (r.recommendations && r.recommendations.length) {
+                recsHtml = `<div class="section-title">💡 Faculty Recommendations</div><ul class="rec-list">` +
+                    r.recommendations.map(rec => `<li>${rec}</li>`).join('') +
+                    `</ul>`;
+            }
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>📋 ${r.student_name}</h3>
+                    <span class="usn-tag">${r.usn}</span>
+                </div>
+                <div class="score-section">
+                    ${scoreRing(pct, color)}
+                    <div class="score-label">
+                        <strong>Dropout Risk Score</strong>
+                        <span class="risk-badge ${riskClass}">● ${r.risk_level} Risk</span>
+                    </div>
+                </div>
+                ${renderStatsGrid(r.stats)}
+                ${factorsHtml}
+                ${recsHtml}
+            </div>`;
+        }
+
+        // ── Healthy Report ────────────────────────────────────
+        function renderHealthyReport(r) {
+            const color = '#10b981';
+
+            let indHtml = '';
+            if (r.positive_indicators && r.positive_indicators.length) {
+                indHtml = `<div class="section-title">✅ Positive Indicators</div><ul class="positive-list">` +
+                    r.positive_indicators.map(i => `<li><span class="ind-name">${i.indicator}</span><span class="ind-value">${i.value}</span></li>`).join('') +
+                    `</ul>`;
+            }
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>📋 ${r.student_name}</h3>
+                    <span class="usn-tag">${r.usn}</span>
+                </div>
+                <div class="score-section">
+                    ${scoreRing(r.health_score, color)}
+                    <div class="score-label">
+                        <strong>Academic Health Score</strong>
+                        <span class="risk-badge low">● Low Risk</span>
+                    </div>
+                </div>
+                ${renderStatsGrid(r.stats)}
+                ${indHtml}
+                <div class="encouragement">${r.encouragement}</div>
+            </div>`;
+        }
+
+        // ── High Risk List ────────────────────────────────────
+        function renderHighRiskList(r) {
+            if (!r.students || !r.students.length) {
+                return `<div class="card"><p>🎉 No students currently flagged as high risk.</p></div>`;
+            }
+
+            const rows = r.students.map(s => {
+                const pct = Math.round(s.probability * 100);
+                const rc = s.risk_category.toLowerCase();
+                return `<tr style="cursor:pointer" onclick="sendQuick('Check student USN: ${s.usn}')">
+                    <td style="font-weight:600;color:var(--text-primary)">${s.name}</td>
+                    <td>${s.usn}</td>
+                    <td><span class="risk-badge ${rc}" style="font-size:10px;padding:3px 8px">● ${pct}%</span></td>
+                </tr>`;
+            }).join('');
+
+            return `<div class="card">
+                <div class="card-header"><h3>🚨 High Risk Students</h3><span class="usn-tag">${r.count} found</span></div>
+                <table class="risk-table">
+                    <thead><tr><th>Name</th><th>USN</th><th>Risk</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:10px">Click a row to view detailed report.</p>
+            </div>`;
+        }
+
+        // ── Explanation ───────────────────────────────────────
+        function renderExplanation(r) {
+            const items = (r.factors || []).map(f => {
+                const wc = f.weight.toLowerCase().replace(/[\s-]/g, '-');
+                return `<div class="explain-factor">
+                    <span class="explain-weight ${wc}">${f.weight}</span>
+                    <div>
+                        <div class="ef-name">${f.name}</div>
+                        <div class="ef-desc">${f.description}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            return `<div class="card">
+                <div class="card-header"><h3>📊 ${r.title}</h3></div>
+                ${items}
+            </div>`;
+        }
+
+        // ── Welcome ───────────────────────────────────────────
+        function renderWelcome(r) {
+            const commands = (r && r.commands) ? r.commands : [
+                { command: 'Check student USN: 22CS045', description: 'View dropout risk assessment for a student' },
+                { command: 'Show high risk students', description: 'List all students at high dropout risk' },
+                { command: 'Explain risk factors', description: 'Understand what factors the model considers' },
+            ];
+            const items = commands.map(c =>
+                `<li onclick="sendQuick('${c.command}')"><code>${c.command}</code><div class="cmd-desc">${c.description}</div></li>`
+            ).join('');
+
+            return `<div>
+                <strong>👋 Welcome to AI Faculty Copilot!</strong>
+                <p style="color:var(--text-secondary);margin-top:6px;font-size:13px">I can help you assess student dropout risk using AI. Try one of these commands:</p>
+                <ul class="cmd-list">${items}</ul>
+            </div>`;
+        }
+
+        // ── Why Risk ──────────────────────────────────────────
+        function renderWhyRisk(r) {
+            const pct = Math.round(r.probability * 100);
+            const riskClass = r.risk_level.toLowerCase();
+            const riskColors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+            const color = riskColors[riskClass] || '#3b82f6';
+
+            let factorsHtml = '';
+            if (r.key_factors && r.key_factors.length) {
+                factorsHtml = `<div class="section-title">🔍 Contributing Factors</div><ul class="factor-list">` +
+                    r.key_factors.map(f => `<li>
+                        <span class="factor-name">${f.factor}: ${f.value}</span>
+                        <span class="severity-badge ${f.severity.toLowerCase()}">${f.severity}</span>
+                        <div class="factor-detail">${f.concern}</div>
+                    </li>`).join('') + `</ul>`;
+            }
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>🧠 Why is ${r.student_name} at risk?</h3>
+                    <span class="usn-tag">${r.usn}</span>
+                </div>
+                <div class="score-section">
+                    ${scoreRing(pct, color)}
+                    <div class="score-label">
+                        <strong>Dropout Probability</strong>
+                        <span class="risk-badge ${riskClass}">● ${r.risk_level} Risk</span>
+                    </div>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">${r.explanation}</p>
+                ${factorsHtml}
+                ${renderStatsGrid(r.stats)}
+            </div>`;
+        }
+
+        // ── Class Summary ─────────────────────────────────────
+        function renderClassSummary(r) {
+            const avgPct = Math.round(r.average_risk * 100);
+
+            let attentionHtml = '';
+            if (r.attention_list && r.attention_list.length) {
+                const rows = r.attention_list.map(s => {
+                    const pct = Math.round(s.probability * 100);
+                    const rc = s.risk_category.toLowerCase();
+                    return `<tr style="cursor:pointer" onclick="sendQuick('Check student USN: ${s.usn}')">
+                        <td style="font-weight:600;color:var(--text-primary)">${s.name}</td>
+                        <td>${s.usn}</td>
+                        <td><span class="risk-badge ${rc}" style="font-size:10px;padding:3px 8px">● ${pct}%</span></td>
+                    </tr>`;
+                }).join('');
+
+                attentionHtml = `<div class="section-title">👀 Students Needing Attention</div>
+                    <table class="risk-table">
+                        <thead><tr><th>Name</th><th>USN</th><th>Risk</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <p style="font-size:11px;color:var(--text-muted);margin-top:10px">Click a row to view detailed report.</p>`;
+            }
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>📊 Class Risk Summary</h3>
+                    <span class="usn-tag">${r.total_students} students</span>
+                </div>
+                <div class="summary-grid">
+                    <div class="summary-stat">
+                        <div class="ss-value" style="color:var(--text-primary)">${r.total_students}</div>
+                        <div class="ss-label">Total Students</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="ss-value" style="color:var(--accent-red)">${r.high_risk}</div>
+                        <div class="ss-label">High Risk</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="ss-value" style="color:var(--accent-amber)">${r.medium_risk}</div>
+                        <div class="ss-label">Medium Risk</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="ss-value" style="color:var(--accent-green)">${r.low_risk}</div>
+                        <div class="ss-label">Low Risk</div>
+                    </div>
+                </div>
+                <div class="score-section">
+                    ${scoreRing(avgPct, avgPct >= 50 ? '#ef4444' : avgPct >= 30 ? '#f59e0b' : '#10b981')}
+                    <div class="score-label">
+                        <strong>Average Class Risk</strong>
+                        <span style="font-size:12px;color:var(--text-secondary)">${r.message}</span>
+                    </div>
+                </div>
+                ${attentionHtml}
+            </div>`;
+        }
+
+        // ── Top N Risk ────────────────────────────────────────
+        function renderTopRisk(r) {
+            const rows = r.students.map(s => {
+                const pct = Math.round(s.probability * 100);
+                const rc = s.risk_category.toLowerCase();
+                return `<tr style="cursor:pointer" onclick="sendQuick('Check student USN: ${s.usn}')">
+                    <td style="font-weight:700;color:var(--accent-blue);text-align:center">#${s.rank}</td>
+                    <td style="font-weight:600;color:var(--text-primary)">${s.name}</td>
+                    <td>${s.usn}</td>
+                    <td><span class="risk-badge ${rc}" style="font-size:10px;padding:3px 8px">● ${pct}%</span></td>
+                </tr>`;
+            }).join('');
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>🏆 ${r.message}</h3>
+                    <span class="usn-tag">${r.count} shown</span>
+                </div>
+                <table class="risk-table">
+                    <thead><tr><th>Rank</th><th>Name</th><th>USN</th><th>Risk</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:10px">Click a row to view detailed report.</p>
+            </div>`;
+        }
+
+        // ── Warning Signals ───────────────────────────────────
+        function renderWarningSignals(r) {
+            if (!r.students || !r.students.length) {
+                return `<div class="card"><p>✅ No critical warning signals detected across the class.</p></div>`;
+            }
+
+            const items = r.students.map(s => {
+                const pct = Math.round(s.probability * 100);
+                const rc = s.risk_category.toLowerCase();
+                const signals = s.signals.map(sig => `<li>${sig}</li>`).join('');
+                return `<div class="signal-student">
+                    <div class="signal-student-header">
+                        <span class="ss-name" style="cursor:pointer" onclick="sendQuick('Check student USN: ${s.usn}')">${s.name} <span style="color:var(--text-muted);font-weight:400">(${s.usn})</span></span>
+                        <span class="risk-badge ${rc}" style="font-size:10px;padding:3px 8px">● ${pct}%</span>
+                    </div>
+                    <ul class="signal-list">${signals}</ul>
+                </div>`;
+            }).join('');
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>⚡ Early Warning Signals</h3>
+                    <span class="usn-tag">${r.count} flagged</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">${r.message}</p>
+                ${items}
+            </div>`;
+        }
+
+        // ── Progress Trend ────────────────────────────────────
+        function renderProgressTrend(r) {
+            const riskClass = r.risk_level.toLowerCase();
+
+            function trendBars(values, barColor) {
+                return values.map(v => {
+                    const h = Math.max(4, (v / 100) * 32);
+                    return `<div class="trend-bar" data-val="${v}" style="height:${h}px;background:${barColor}"></div>`;
+                }).join('');
+            }
+
+            function arrowEl(direction) {
+                return direction === 'increasing'
+                    ? `<span class="trend-arrow up">↑</span>`
+                    : `<span class="trend-arrow down">↓</span>`;
+            }
+
+            const monthsHtml = `<div class="trend-months">${r.months.map(m => `<span>${m}</span>`).join('')}</div>`;
+            const overallClass = r.trend_summary.overall === 'improving' ? 'low' : 'high';
+            const overallIcon = r.trend_summary.overall === 'improving' ? '📈' : '📉';
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>📈 ${r.student_name}'s Progress</h3>
+                    <span class="usn-tag">${r.usn}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0 16px">
+                    <span class="risk-badge ${riskClass}">● ${r.risk_level} Risk</span>
+                    <span class="risk-badge ${overallClass}" style="text-transform:none;letter-spacing:0">${overallIcon} Overall: ${r.trend_summary.overall}</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">${r.message}</p>
+                ${monthsHtml}
+                <div class="trend-row">
+                    <span class="trend-label">Attendance</span>
+                    <div class="trend-bars">${trendBars(r.trends.attendance, '#3b82f6')}</div>
+                    ${arrowEl(r.trend_summary.attendance)}
+                </div>
+                <div class="trend-row">
+                    <span class="trend-label">Assignments</span>
+                    <div class="trend-bars">${trendBars(r.trends.assignments, '#8b5cf6')}</div>
+                    ${arrowEl(r.trend_summary.assignments)}
+                </div>
+                <div class="trend-row">
+                    <span class="trend-label">LMS Activity</span>
+                    <div class="trend-bars">${trendBars(r.trends.lms_activity, '#10b981')}</div>
+                    ${arrowEl(r.trend_summary.lms_activity)}
+                </div>
+            </div>`;
+        }
+
+        // ── Student Report ────────────────────────────────────
+        function renderStudentReport(r) {
+            const pct = Math.round(r.probability * 100);
+            const riskClass = r.risk_level.toLowerCase();
+            const riskColors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+            const color = riskColors[riskClass] || '#3b82f6';
+
+            let factorsHtml = '';
+            if (r.key_factors && r.key_factors.length) {
+                factorsHtml = `<div class="section-title">⚠️ Key Risk Factors</div><ul class="factor-list">` +
+                    r.key_factors.map(f => `<li><span class="factor-name">${f.factor}: ${f.value}</span><div class="factor-detail">${f.concern}</div></li>`).join('') +
+                    `</ul>`;
+            }
+
+            let indHtml = '';
+            if (r.positive_indicators && r.positive_indicators.length) {
+                indHtml = `<div class="section-title">✅ Positive Indicators</div><ul class="positive-list">` +
+                    r.positive_indicators.map(i => `<li><span class="ind-name">${i.indicator}</span><span class="ind-value">${i.value}</span></li>`).join('') +
+                    `</ul>`;
+            }
+
+            let recsHtml = '';
+            if (r.recommendations && r.recommendations.length) {
+                recsHtml = `<div class="section-title">💡 Faculty Recommendations</div><ul class="rec-list">` +
+                    r.recommendations.map(rec => `<li>${rec}</li>`).join('') +
+                    `</ul>`;
+            }
+
+            return `<div class="card">
+                <div class="card-header">
+                    <h3>📝 Performance Report — ${r.student_name}</h3>
+                    <span class="usn-tag">${r.usn}</span>
+                </div>
+                <div class="score-section">
+                    ${scoreRing(r.health_score, color)}
+                    <div class="score-label">
+                        <strong>Academic Health Score</strong>
+                        <span class="risk-badge ${riskClass}">● ${r.risk_level} Risk (${pct}%)</span>
+                    </div>
+                </div>
+                ${renderStatsGrid(r.stats)}
+                <div class="report-meta">
+                    <div class="report-meta-item">
+                        <div class="rm-label">Distance from College</div>
+                        <div class="rm-value">${r.distance_from_college} km</div>
+                    </div>
+                    <div class="report-meta-item">
+                        <div class="rm-label">Financial Background</div>
+                        <div class="rm-value">${r.financial_background === 1 ? '🔴 Low' : r.financial_background === 2 ? '🟡 Medium' : '🟢 High'}</div>
+                    </div>
+                </div>
+                ${factorsHtml}
+                ${indHtml}
+                ${recsHtml}
+            </div>`;
+        }
+
+        // ── Helpers ───────────────────────────────────────────
+        function scoreRing(pct, color) {
+            const circumference = 2 * Math.PI * 26;
+            const offset = circumference - (pct / 100) * circumference;
+            return `<div class="score-ring">
+                <svg width="64" height="64" viewBox="0 0 64 64">
+                    <circle class="bg" cx="32" cy="32" r="26" fill="none" stroke-width="5"/>
+                    <circle class="fill" cx="32" cy="32" r="26" fill="none" stroke="${color}" stroke-width="5"
+                        stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
+                        data-target="${offset}"/>
+                </svg>
+                <span class="score-value" style="color:${color}">${pct}%</span>
+            </div>`;
+        }
+
+        function animateScoreRings(container) {
+            container.querySelectorAll('.fill').forEach(circle => {
+                const target = circle.getAttribute('data-target');
+                circle.style.strokeDashoffset = target;
+            });
+        }
+
+        function renderStatsGrid(stats) {
+            if (!stats) return '';
+            const items = [
+                { label: 'Attendance', value: stats.attendance + '%' },
+                { label: 'GPA', value: stats.gpa },
+                { label: 'Assignments', value: stats.assignment_completion + '%' },
+                { label: 'LMS Activity', value: stats.lms_activity },
+                { label: 'Participation', value: stats.class_participation },
+            ];
+            return `<div class="stats-grid">` +
+                items.map(i => `<div class="stat-item"><div class="label">${i.label}</div><div class="value">${i.value}</div></div>`).join('') +
+                `</div>`;
+        }
+
+        function escapeHtml(text) {
+            const el = document.createElement('span');
+            el.textContent = text;
+            return el.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

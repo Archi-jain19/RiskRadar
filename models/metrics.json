@@ -1,0 +1,87 @@
+{
+  "version": "v3_final",
+  "ensemble_type": "Voting",
+  "optimal_threshold": 0.38000000000000006,
+  "test_metrics": {
+    "accuracy": 0.7733333333333333,
+    "precision": 0.5148063781321185,
+    "recall": 0.6402266288951841,
+    "f1_score": 0.5707070707070707,
+    "auc_roc": 0.8030161203879562
+  },
+  "improvement_over_v1": {
+    "accuracy": -0.013966666666666683,
+    "precision": -0.03349362186788152,
+    "recall": 0.09352662889518415,
+    "f1_score": 0.02320707070707073,
+    "auc_roc": -0.0014838796120437703
+  },
+  "individual_val_auc": {
+    "xgboost": 0.7844901467308485,
+    "lightgbm": 0.7907189836276924,
+    "random_forest": 0.8018034483354779,
+    "gradient_boosting": 0.7938852678869126
+  },
+  "feature_importance": [
+    {
+      "feature": "academic_risk_score",
+      "importance": 0.10945896059274673
+    },
+    {
+      "feature": "GPA",
+      "importance": 0.08975861966609955
+    },
+    {
+      "feature": "gpa_x_attendance",
+      "importance": 0.05903811752796173
+    },
+    {
+      "feature": "financial_stress",
+      "importance": 0.050665903836488724
+    },
+    {
+      "feature": "Internet_Access",
+      "importance": 0.0486818365752697
+    },
+    {
+      "feature": "dept_CS",
+      "importance": 0.0462677925825119
+    },
+    {
+      "feature": "dept_Engineering",
+      "importance": 0.04499860480427742
+    },
+    {
+      "feature": "dept_Science",
+      "importance": 0.04344761371612549
+    },
+    {
+      "feature": "semester_num",
+      "importance": 0.04060334712266922
+    },
+    {
+      "feature": "Scholarship",
+      "importance": 0.039594054222106934
+    },
+    {
+      "feature": "Gender",
+      "importance": 0.03795745223760605
+    },
+    {
+      "feature": "dept_Business",
+      "importance": 0.037844330072402954
+    },
+    {
+      "feature": "Assignment_Delay_Days",
+      "importance": 0.032050516456365585
+    },
+    {
+      "feature": "financial_academic_risk",
+      "importance": 0.028876038268208504
+    },
+    {
+      "feature": "Parental_Education",
+      "importance": 0.02466806024312973
+    }
+  ]
+}

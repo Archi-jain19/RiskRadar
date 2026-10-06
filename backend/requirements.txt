@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+supabase
+python-dotenv
+pandas
+scikit-learn
+python-multipart
+joblib
+xgboost
+lightgbm
+numpy
