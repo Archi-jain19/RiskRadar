@@ -53,37 +53,6 @@ Student dropout is one of higher education's most urgent challenges. Traditional
 
 ---
 
-## 🏛️ System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Data Layer
-        A[Student Records / CSV Upload] --> B[Data Cleaning & Imputation]
-        B --> C[Feature Engineering & Scaling]
-    end
-
-    subgraph ML & Intelligence Engine
-        C --> D[Ensemble Classifier\nRandom Forest + XGBoost + LightGBM]
-        C --> E[Temporal LSTM Sequence Model]
-        D & E --> F[Risk Calibration & SHAP Factor Extraction]
-    end
-
-    subgraph Backend API (FastAPI)
-        F --> G[FastAPI Service\nPort 8000]
-        G --> H[/api/student-predictions]
-        G --> I[/api/upload-student-data]
-        G --> J[/api/chat NLP Engine]
-    end
-
-    subgraph Faculty Dashboard (React + Vite)
-        H & I --> K[Executive Dashboard & Metrics]
-        H --> L[Student Risk Directory]
-        J --> M[AI Copilot Assistant Modal]
-    end
-```
-
----
-
 ## 🔬 Model Performance & Evaluation
 
 The predictive engine is trained on multi-attribute student behavioral data with class balancing (SMOTE) and feature engineering:
